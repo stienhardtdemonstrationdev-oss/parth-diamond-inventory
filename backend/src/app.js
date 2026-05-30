@@ -24,13 +24,20 @@ app.use(compression());
 // CORS — allow configured frontend origins (comma-separated)
 const allowed = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
-  .map((s) => s.trim());
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+// Allow any Vercel deployment of this project (production + previews) without
+// having to whitelist each generated domain.
+const VERCEL_ORIGIN = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
 
 app.use(
   cors({
     origin(origin, cb) {
-      // allow non-browser tools (no origin) and any allowed origin
-      if (!origin || allowed.includes(origin)) return cb(null, true);
+      // allow non-browser tools (no origin), explicit allow-list, and *.vercel.app
+      if (!origin || allowed.includes(origin) || VERCEL_ORIGIN.test(origin)) {
+        return cb(null, true);
+      }
       return cb(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
